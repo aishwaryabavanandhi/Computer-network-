@@ -1,0 +1,186 @@
+1.#include <stdio.h>
+#include <string.h>
+void bitStuffing(int N, int arr[])
+{
+int brr[30];
+int i, j, k;
+i = 0;
+j = 0;
+while (i < N) {
+if (arr[i] == 1) {
+int count = 1;
+brr[j] = arr[i];
+for (k = i + 1;
+arr[k] == 1 && k < N && count < 5; k++) {
+j++;
+brr[j] = arr[k];
+count++;
+if (count == 5) {
+j++;
+brr[j] = 0;
+}
+i = k;
+}
+}
+else {
+brr[j] = arr[i];
+}
+i++;
+j++;
+}
+for (i = 0; i < j; i++)
+printf("%d", brr[i]);
+}
+int main()
+{
+int N = 9;
+int arr[] = { 1, 1, 1, 0, 1, 1, 1, 1, 1 };
+bitStuffing(N, arr);
+return 0;
+}//bit stuffing
+
+2.#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+#define PORT 8080
+#define MAX_BUFFER_SIZE 1024
+
+int main() {
+    int server_fd, new_socket, valread;
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
+    char buffer[MAX_BUFFER_SIZE] = {0};
+
+    // Creating socket file descriptor
+    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+
+    // Binding the socket to the specified port
+    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) {
+        perror("Bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Start listening for incoming connections
+    if (listen(server_fd, 3) < 0) {
+        perror("Listen failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Accept incoming connection
+    if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
+        perror("Accept failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read data from the client
+    valread = read(new_socket, buffer, MAX_BUFFER_SIZE);
+    printf("Received request from client: %s\n", buffer);
+
+    // Get current date and time
+    time_t current_time;
+    time(&current_time);
+    char *date_time = ctime(&current_time);
+
+    // Send date and time to the client
+    send(new_socket, date_time, strlen(date_time), 0);
+    printf("Sent date and time to the client\n");
+
+    // Close the socket
+    close(new_socket);
+    close(server_fd);
+
+    return 0;
+}//tcp
+
+3.#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <time.h>
+
+#define WINDOW_SIZE 4
+#define TIMEOUT 2
+
+typedef struct {
+    int sequenceNumber;
+    int ack;
+    char data[20];
+} Packet;
+
+void simulateTransmission(Packet packets[], int numPackets) {
+    srand(time(0));
+
+    int currentIndex = 0;
+    int nextSequenceNumber = 0;
+
+    while (currentIndex < numPackets) {
+        if (nextSequenceNumber < currentIndex + WINDOW_SIZE) {
+            printf("Sending packet with sequence number %d\n", nextSequenceNumber);
+            packets[nextSequenceNumber].sequenceNumber = nextSequenceNumber;
+
+            if (nextSequenceNumber == numPackets - 1) {
+                packets[nextSequenceNumber].ack = 1; // Set ack flag for last packet
+            } else {
+                packets[nextSequenceNumber].ack = 0;
+            }
+
+            // Simulating packet loss
+            if (rand() % 4 != 0) {
+                // Simulating packet corruption
+                if (rand() % 3 != 0) {
+                    strcpy(packets[nextSequenceNumber].data, "DATA");
+                } else {
+                    strcpy(packets[nextSequenceNumber].data, "CORRUPT");
+                }
+            } else {
+                strcpy(packets[nextSequenceNumber].data, "LOST");
+            }
+
+            nextSequenceNumber++;
+        }
+
+        int ackPacketNumber = -1;
+        printf("Acknowledgment received for packets: ");
+
+        for (int i = currentIndex; i < nextSequenceNumber; i++) {
+            if (packets[i].ack == 1) {
+                ackPacketNumber = i;
+                printf("%d ", ackPacketNumber);
+            }
+        }
+
+        printf("\n");
+
+        if (ackPacketNumber != -1) {
+            currentIndex = ackPacketNumber + 1;
+        }
+    }
+}
+
+int main() {
+    int numPackets;
+    printf("Enter the number of packets to be transmitted: ");
+    scanf("%d", &numPackets);
+
+    Packet packets[numPackets];
+
+    printf("Simulating transmission...\n");
+
+    simulateTransmission(packets, numPackets);
+
+    printf("Transmission complete.\n");
+
+    return 0;
+}//sliding window
